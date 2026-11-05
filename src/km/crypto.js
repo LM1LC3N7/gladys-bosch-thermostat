@@ -1,0 +1,76 @@
+// -----------------------------------------------------------------------------
+// The encryption of the KM gateway protocol, ported from
+// bosch-thermostat-client 0.28.3 (Apache-2.0, encryption/base.py and
+// const/ivt.py): AES-256 in ECB mode, the key being
+//   md5(access token + MAGIC) || md5(MAGIC + password)
+// (32 bytes), the plaintext padded with zero bytes to a multiple of 16, the
+// ciphertext in base64. MAGIC is a constant of the local protocol (the same
+// for every KM gateway, used by every client of it), not an identifier of
+// an application.
+//
+// The derived key is kept by the client only (never logged, never stored).
+// -----------------------------------------------------------------------------
+
+import { createCipheriv, createDecipheriv, createHash } from 'node:crypto';
+
+const MAGIC = Buffer.from(
+  '867845e97c4e29dce522b9a7d3a3e07b152bffadddbed7f5ffd842e9895ad1e4',
+  'hex',
+);
+const BLOCK = 16;
+
+/** The AES key of a gateway: from its access token (dashes ignored) and the app password. */
+export function deriveKey(token, password) {
+  const t = Buffer.from(String(token).replace(/-/g, ''), 'utf8');
+  const p = Buffer.from(String(password), 'utf8');
+  return Buffer.concat([
+    createHash('md5')
+      .update(Buffer.concat([t, MAGIC]))
+      .digest(),
+    createHash('md5')
+      .update(Buffer.concat([MAGIC, p]))
+      .digest(),
+  ]);
+}
+
+/** A JSON value -> the base64 body of a write. */
+export function encrypt(key, value) {
+  const plain = Buffer.from(JSON.stringify(value), 'utf8');
+  const padded = Buffer.alloc(Math.ceil(plain.length / BLOCK) * BLOCK || BLOCK);
+  plain.copy(padded);
+  const cipher = createCipheriv('aes-256-ecb', key, null);
+  cipher.setAutoPadding(false);
+  return Buffer.concat([cipher.update(padded), cipher.final()]).toString('base64');
+}
+
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
+const utf8 = new TextDecoder('utf-8', { fatal: true });
+
+/**
+ * The base64 body of an answer -> { json } when it decrypts into JSON,
+ * { garbled: true } when it is a well-formed ciphertext that does not (the
+ * key of the gateway is not ours: wrong token or password), or
+ * { malformed: true } when it is no ciphertext at all (another device).
+ */
+export function decrypt(key, body) {
+  const text = typeof body === 'string' ? body.replace(/\s+/g, '') : '';
+  if (text.length === 0 || !BASE64.test(text)) {
+    return { malformed: true };
+  }
+  const data = Buffer.from(text, 'base64');
+  if (data.length === 0 || data.length % BLOCK !== 0) {
+    return { malformed: true };
+  }
+  const decipher = createDecipheriv('aes-256-ecb', key, null);
+  decipher.setAutoPadding(false);
+  const plain = Buffer.concat([decipher.update(data), decipher.final()]);
+  let end = plain.length;
+  while (end > 0 && plain[end - 1] === 0) {
+    end -= 1;
+  }
+  try {
+    return { json: JSON.parse(utf8.decode(plain.subarray(0, end))) };
+  } catch {
+    return { garbled: true };
+  }
+}

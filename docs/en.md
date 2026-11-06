@@ -100,9 +100,15 @@ and the setpoints are refused (a stop kept there would be unknown).
 
 ## The stop
 
-Choosing an **"Off"** mode (`off`, `Off`, `Always_Off` depending on the
-controller; mostly hot water, RC300 heating circuits list none) needs no
-option. It leaves without waiting for a read, ahead of any other request: a
+Choosing an **"Off"** mode (`off`, `Off`, `Always_Off`, `heating_off`
+depending on the controller, mostly for hot water) needs no option.
+
+**The heating of an RC300 or RC200 controller cannot be stopped from Gladys
+in this version**: its circuits list no off mode (only manual and
+automatic). Lower its setpoint (with the option), or stop it on the
+controller or in the app.
+
+The stop leaves without waiting for a read, ahead of any other request: a
 read under way is cut, the commands not sent yet are cancelled (nothing asked
 before the stop leaves after it). Neither the option, nor the bounds, nor a
 pause asked by the gateway (HTTP 429/5xx), nor credentials refused before
@@ -175,6 +181,9 @@ unreadable and holds no stop.
   modes, two setpoints) is sent and confirmed up to 300 ms per request; a
   command alone up to 800 ms. Beyond, Gladys shows "not applied yet" or
   "nothing sent", and the follow-up reads publish the value.
+- The heating of RC300/RC200 controllers cannot be stopped from Gladys (no
+  off mode in their circuits; the summer/winter mode that would do it is not
+  in this version).
 - Schedules, summer/winter mode, single hot water charge, energy, solar
   circuits, EasyControl and Nefit gateways: not in this version.
 

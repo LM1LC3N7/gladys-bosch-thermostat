@@ -13,7 +13,8 @@
     "test": "node --test --test-timeout=60000",
     "audit": "npm audit --omit=dev",
     "cover": "node scripts/cover.mjs cover.png",
-    "validate:manifest": "npx --yes github:GladysAssistant/integration-store ."
+    "validate:manifest": "npx --yes github:GladysAssistant/integration-store .",
+    "mutants": "node scripts/mutants.mjs"
   },
   "engines": {
     "node": ">=22"

@@ -37,6 +37,7 @@ import { CODES, KmError } from './errors.js';
  * @param {() => void} [o.beforeSend]
  * @param {AbortSignal} [o.signal]
  * @param {{ setTimeout: Function, clearTimeout: Function }} [o.timers]
+ * @param {typeof http.request} [o.request] node:http's (tests: a connection that never comes up)
  */
 export function httpRequest({
   host,
@@ -50,6 +51,7 @@ export function httpRequest({
   beforeSend,
   signal,
   timers = globalThis,
+  request = http.request,
 }) {
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -133,7 +135,7 @@ export function httpRequest({
     };
 
     try {
-      req = http.request({
+      req = request({
         host,
         port,
         path,

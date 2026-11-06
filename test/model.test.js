@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDecipheriv } from 'node:crypto';
+import { createCipheriv, createDecipheriv } from 'node:crypto';
 import { decrypt, deriveKey, encrypt } from '../src/km/crypto.js';
 import {
   circuitsOf,
@@ -146,4 +146,31 @@ test('circuits: the references of the folder, names checked, bounded', () => {
   ]);
   assert.equal(circuitsOf({ type: 'stringValue' }, 'hc'), undefined);
   assert.equal(circuitsOf({ type: 'refEnum', references: 'x' }, 'hc'), undefined);
+});
+
+test('a refusal only when the first block does not open: a broken answer with our key is malformed', () => {
+  const key = deriveKey('Ab12Cd34Ef56Gh78', 'pw');
+  const answer = {
+    id: '/system/sensors/temperatures/outdoor_t1',
+    type: 'floatValue',
+    value: 4.5,
+    unitOfMeasure: 'C',
+  };
+  const full = encrypt(key, answer);
+  // Cut on a block boundary (close-delimited, no Content-Length): 48 bytes.
+  assert.deepEqual(decrypt(key, full.slice(0, 64)), { malformed: true });
+  // A byte that is no UTF-8 (Latin-1 "é") in a text, our key.
+  const plain = Buffer.from(JSON.stringify({ ...answer, name: 'Aussen_X' }), 'utf8');
+  plain[plain.indexOf('X')] = 0xe9;
+  const padded = Buffer.alloc(Math.ceil(plain.length / 16) * 16);
+  plain.copy(padded);
+  const c = createCipheriv('aes-256-ecb', key, null);
+  c.setAutoPadding(false);
+  const latin = Buffer.concat([c.update(padded), c.final()]).toString('base64');
+  assert.deepEqual(decrypt(key, latin), { malformed: true });
+  // A short answer: its zero padding inside the first block is fine.
+  assert.deepEqual(decrypt(key, encrypt(key, { a: 1 })).json, { a: 1 });
+  // Another key, and a ciphertext of junk: refused.
+  assert.deepEqual(decrypt(deriveKey('Ab12Cd34Ef56Gh78', 'other'), full), { garbled: true });
+  assert.deepEqual(decrypt(key, Buffer.alloc(32, 7).toString('base64')), { garbled: true });
 });

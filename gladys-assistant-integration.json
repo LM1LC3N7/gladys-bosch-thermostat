@@ -67,8 +67,8 @@
         "fr": "Code d'accès (imprimé sur la passerelle)"
       },
       "description": {
-        "en": "The \"Access token\" (or \"Login token\") on the label of the gateway, e.g. AbCd-EfGh-IjKl-MnOp; the dashes are optional. Kept by Gladys in its database, never shown again, sent only to the gateway at the address above (as part of the key of its exchanges, never in clear).",
-        "fr": "Le « Access token » (ou « Login token ») de l'étiquette de la passerelle, par exemple AbCd-EfGh-IjKl-MnOp ; les tirets sont facultatifs. Gardé par Gladys dans sa base, jamais réaffiché, envoyé seulement à la passerelle à l'adresse ci-dessus (comme partie de la clé de ses échanges, jamais en clair)."
+        "en": "The \"Access token\" (or \"Login token\") on the label of the gateway, e.g. AbCd-EfGh-IjKl-MnOp; the dashes are optional. Kept by Gladys in its database, never shown again, never sent: it only forms the key of the exchanges with the gateway.",
+        "fr": "Le « Access token » (ou « Login token ») de l'étiquette de la passerelle, par exemple AbCd-EfGh-IjKl-MnOp ; les tirets sont facultatifs. Gardé par Gladys dans sa base, jamais réaffiché, jamais envoyé : il sert seulement à former la clé des échanges avec la passerelle."
       },
       "required": true
     },
@@ -80,8 +80,8 @@
         "fr": "Mot de passe défini dans l'application Buderus"
       },
       "description": {
-        "en": "The password you chose in the Buderus app (MyDevice, EasyControl) when you first set the gateway up. Kept by Gladys in its database, never shown again, sent only to the gateway at the address above (as part of the key of its exchanges, never in clear).",
-        "fr": "Le mot de passe choisi dans l'application Buderus (MyDevice, EasyControl) à la première mise en service de la passerelle. Gardé par Gladys dans sa base, jamais réaffiché, envoyé seulement à la passerelle à l'adresse ci-dessus (comme partie de la clé de ses échanges, jamais en clair)."
+        "en": "The password you chose in the Buderus app (MyDevice, EasyControl) when you first set the gateway up. Kept by Gladys in its database, never shown again, never sent: it only forms the key of the exchanges with the gateway.",
+        "fr": "Le mot de passe choisi dans l'application Buderus (MyDevice, EasyControl) à la première mise en service de la passerelle. Gardé par Gladys dans sa base, jamais réaffiché, jamais envoyé : il sert seulement à former la clé des échanges avec la passerelle."
       },
       "required": true
     },
@@ -93,8 +93,8 @@
         "fr": "Commandes"
       },
       "description": {
-        "en": "By default Gladys only reads. Once allowed, the dashboard, the scenes and the voice assistants can change the mode of each circuit and the room and hot water setpoints, always within the bounds the gateway gives and those below. An \"Off\" mode (listed by some circuits, hot water mostly) needs no option: it stops that circuit; the guide lists the cases where it is still refused.",
-        "fr": "Par défaut Gladys ne fait que lire. Une fois autorisés, le tableau de bord, les scènes et les assistants vocaux peuvent changer le mode de chaque circuit et les consignes de pièce et d'eau chaude, toujours dans les bornes que donne la passerelle et celles ci-dessous. Un mode « Arrêt » (proposé par certains circuits, surtout l'eau chaude) n'a pas besoin d'option : il arrête ce circuit ; le guide liste les cas où il est encore refusé."
+        "en": "By default Gladys only reads. Once allowed, the dashboard, the scenes and the voice assistants can change the mode of each circuit and the room and hot water setpoints, always within the bounds the gateway gives and those below. An \"Off\" mode (off, Off, Always_Off, heating_off, listed by some circuits, hot water mostly) needs no option: it stops that circuit; the guide lists the cases where it is still refused. The heating of an RC300/RC200 controller lists no off mode: it cannot be stopped from Gladys in this version (lower its setpoint, or use the controller or the app).",
+        "fr": "Par défaut Gladys ne fait que lire. Une fois autorisés, le tableau de bord, les scènes et les assistants vocaux peuvent changer le mode de chaque circuit et les consignes de pièce et d'eau chaude, toujours dans les bornes que donne la passerelle et celles ci-dessous. Un mode « Arrêt » (off, Off, Always_Off, heating_off, proposé par certains circuits, surtout l'eau chaude) n'a pas besoin d'option : il arrête ce circuit ; le guide liste les cas où il est encore refusé. Le chauffage d'un régulateur RC300/RC200 ne propose pas de mode arrêt : il ne peut pas être arrêté depuis Gladys dans cette version (baissez sa consigne, ou passez par le régulateur ou l'application)."
       }
     },
     {

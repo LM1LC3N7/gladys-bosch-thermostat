@@ -106,9 +106,15 @@ serait inconnu).
 
 ## L'arrêt
 
-Choisir un mode **« Arrêt »** (`off`, `Off`, `Always_Off` selon le
-régulateur ; surtout l'eau chaude, les circuits de chauffage RC300 n'en
-proposent pas) n'a pas besoin de l'option. Il part sans attendre une
+Choisir un mode **« Arrêt »** (`off`, `Off`, `Always_Off`, `heating_off` selon
+le régulateur, surtout pour l'eau chaude) n'a pas besoin de l'option.
+
+**Le chauffage d'un régulateur RC300 ou RC200 ne peut pas être arrêté depuis
+Gladys dans cette version** : ses circuits ne proposent pas de mode arrêt
+(seulement manuel et automatique). Baissez sa consigne (avec l'option), ou
+arrêtez-le sur le régulateur ou dans l'application.
+
+L'arrêt part sans attendre une
 lecture, devant toute autre requête : une lecture en cours est interrompue,
 les commandes pas encore envoyées sont annulées (rien de ce qui a été demandé
 avant l'arrêt ne part après lui). Ni l'option, ni les bornes, ni une pause
@@ -186,6 +192,9 @@ secret. Une lecture ou une écriture de /data n'est pas attendue plus de
   jusqu'à 300 ms par requête ; une commande seule jusqu'à 800 ms. Au-delà,
   Gladys affiche « pas encore appliquée » ou « rien envoyé », et les lectures
   de suivi publient la valeur.
+- Le chauffage des régulateurs RC300/RC200 ne peut pas être arrêté depuis
+  Gladys (pas de mode arrêt dans leurs circuits ; le mode été/hiver qui le
+  ferait n'est pas dans cette version).
 - Programmes horaires, mode été/hiver, charge unique d'eau chaude, énergie,
   circuits solaires, passerelles EasyControl et Nefit : pas dans cette
   version.

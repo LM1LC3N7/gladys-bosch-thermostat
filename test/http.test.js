@@ -202,9 +202,10 @@ test('the client: another key (garbled), no ciphertext, an HTTP 404, a bad path'
   });
   assert.equal((await failure(client.get('/gateway/uuid'))).code, CODES.KEY);
   assert.equal((await failure(client.get('/gateway/versionFirmware'))).code, CODES.BAD_ANSWER);
+  // Not the start of a KM answer ("{"): our key does not open it as one.
   assert.equal(
     (await failure(client.get('/system/sensors/temperatures/outdoor_t1'))).code,
-    CODES.BAD_ANSWER,
+    CODES.KEY,
   );
   const missing = await failure(client.get('/heatSources/systemPressure'));
   assert.equal(missing.code, CODES.HTTP);
@@ -214,4 +215,35 @@ test('the client: another key (garbled), no ciphertext, an HTTP 404, a bad path'
   assert.equal(srv.requests.length, 4, 'a bad path never leaves');
   assert.ok(!Object.keys(client).includes('key'), 'the key is not enumerable');
   client.close();
+});
+
+test('a connection not up within sendWithin: LATE, nothing written, settled at once', async () => {
+  const { EventEmitter } = await import('node:events');
+  let written = false;
+  let destroyed = false;
+  // A connection that never comes up (no 'socket' event).
+  const request = () => {
+    const req = new EventEmitter();
+    req.end = () => {
+      written = true;
+    };
+    req.destroy = () => {
+      destroyed = true;
+    };
+    return req;
+  };
+  const at = performance.now();
+  const err = await failure(
+    httpRequest({
+      ...base(1, { timeout: 5000, sendWithin: 100 }),
+      method: 'PUT',
+      body: 'x',
+      request,
+    }),
+  );
+  assert.equal(err.code, CODES.LATE);
+  assert.equal(err.sent, false);
+  assert.equal(written, false);
+  assert.equal(destroyed, true);
+  assert.ok(performance.now() - at < 1000, 'well before the 5 s deadline');
 });

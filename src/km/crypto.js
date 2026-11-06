@@ -48,9 +48,13 @@ const utf8 = new TextDecoder('utf-8', { fatal: true });
 
 /**
  * The base64 body of an answer -> { json } when it decrypts into JSON,
- * { garbled: true } when it is a well-formed ciphertext that does not (the
- * key of the gateway is not ours: wrong token or password), or
- * { malformed: true } when it is no ciphertext at all (another device).
+ * { garbled: true } when its FIRST block does not open into the start of a
+ * JSON object (the key of the gateway is not ours: wrong token or password;
+ * with another key, 16 printable bytes starting with "{" come about once in
+ * 10^9), or { malformed: true } when it is no ciphertext at all (another
+ * device) or when the first block opens but the rest does not (an answer cut
+ * short, a byte that is no UTF-8: ECB opens each block alone, so our key
+ * reads the start of a broken answer; never a refusal).
  */
 export function decrypt(key, body) {
   const text = typeof body === 'string' ? body.replace(/\s+/g, '') : '';
@@ -64,6 +68,9 @@ export function decrypt(key, body) {
   const decipher = createDecipheriv('aes-256-ecb', key, null);
   decipher.setAutoPadding(false);
   const plain = Buffer.concat([decipher.update(data), decipher.final()]);
+  if (!opensAsJson(plain.subarray(0, BLOCK))) {
+    return { garbled: true };
+  }
   let end = plain.length;
   while (end > 0 && plain[end - 1] === 0) {
     end -= 1;
@@ -71,6 +78,26 @@ export function decrypt(key, body) {
   try {
     return { json: JSON.parse(utf8.decode(plain.subarray(0, end))) };
   } catch {
-    return { garbled: true };
+    return { malformed: true };
   }
+}
+
+/**
+ * The first block of a KM answer: "{" then printable ASCII (or the zero
+ * padding of a short answer), as every answer of the gateway starts
+ * ({"id":"/...).
+ */
+function opensAsJson(block) {
+  if (block[0] !== 0x7b) {
+    return false;
+  }
+  let padding = false;
+  for (const byte of block) {
+    if (byte === 0) {
+      padding = true;
+    } else if (padding || byte < 0x20 || byte > 0x7e) {
+      return false;
+    }
+  }
+  return true;
 }

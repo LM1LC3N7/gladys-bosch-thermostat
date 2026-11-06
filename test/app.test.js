@@ -452,3 +452,50 @@ test('a refusal kept without a readable print is never lifted by a restart', asy
   assert.equal(reads(t), 0);
   assert.equal(store.data?.refused ?? true, true);
 });
+
+test('with our key, an answer cut short or with a byte that is no UTF-8: never a refusal, the reads go on', async () => {
+  const store = memoryStore();
+  const t = await setup({ store });
+  await t.connect();
+  await t.create();
+  const OUTDOOR = '/system/sensors/temperatures/outdoor_t1';
+  // The value cut after 48 bytes (a close-delimited answer cut on a block).
+  t.dev.route = (path, method) =>
+    method === 'GET' && path === OUTDOOR
+      ? { status: 200, body: t.dev.sealed(200, t.dev.paths[OUTDOOR]).body.slice(0, 64) }
+      : undefined;
+  await t.wait(61 * SECOND);
+  assert.equal(store.data.refused, false);
+  assert.equal(t.app.session.online, true, 'a value left out');
+  // The uuid itself cut short: a failed read, never a refusal.
+  t.dev.route = (path, method) =>
+    method === 'GET' && path === '/gateway/uuid'
+      ? { status: 200, body: t.dev.sealed(200, t.dev.paths['/gateway/uuid']).body.slice(0, 24) }
+      : undefined;
+  await t.wait(61 * SECOND);
+  assert.equal(store.data.refused, false);
+  assert.match(statusText(t), /Passerelle non lue \(badAnswer\)/);
+  t.dev.route = undefined;
+  const before = reads(t);
+  await t.wait(2 * MINUTE);
+  assert.ok(reads(t) > before, 'the reads go on');
+});
+
+test('another gateway at the address: the status of the integration says it too', async () => {
+  const t = await setup();
+  await t.connect();
+  await t.create();
+  t.dev.paths['/gateway/uuid'].value = OTHER_UUID;
+  await t.wait(61 * SECOND);
+  assert.equal(t.gladys.fake.connectionStatus.connected, false);
+  assert.match(statusText(t), /Une autre passerelle KM répond à cette adresse/);
+});
+
+test('the button never reads sooner than the interval (60 s), even 20 s after a read', async () => {
+  const t = await setup();
+  await t.connect();
+  await t.wait(20 * SECOND);
+  const answer = await t.during(t.app.testConnection());
+  assert.match(answer.value, /prochain essai possible dans 40 s/);
+  assert.equal(reads(t), 1);
+});

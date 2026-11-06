@@ -156,6 +156,10 @@ export const T = {
       `Gateway not read (${reason}); next try in ${wait.en}`,
       `Passerelle non lue (${reason}) ; nouvel essai dans ${wait.fr}`,
     ),
+  foreign: both(
+    'Another KM gateway answers at this address: its values do not go to the device created; check the address',
+    'Une autre passerelle KM répond à cette adresse : ses valeurs ne vont pas sur l’appareil créé ; vérifiez l’adresse',
+  ),
   noIdentity: both(
     'The gateway answers without its identifier (uuid): values not shown',
     'La passerelle répond sans son identifiant (uuid) : valeurs non affichées',
@@ -322,8 +326,8 @@ export const ERRORS = {
     ),
   stopRejected: (reason) =>
     both(
-      `Stop refused by the gateway (${reason}): sent again by the next reads (3 times at most).`,
-      `Arrêt refusé par la passerelle (${reason}) : renvoyé par les prochaines lectures (3 fois au plus).`,
+      `Stop refused by the gateway (${reason}): sent again by the next reads (twice at most).`,
+      `Arrêt refusé par la passerelle (${reason}) : renvoyé par les prochaines lectures (2 fois au plus).`,
     ),
   stopUnconfirmed: (reason) =>
     both(

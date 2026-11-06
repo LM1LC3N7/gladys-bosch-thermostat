@@ -637,12 +637,16 @@ export class KmApp {
     session.wait = wait;
   }
 
-  /** A value the gateway may not have: a 4xx or a bad answer leaves it out; the rest throws. */
+  /**
+   * A value the gateway may not have: a 4xx or a bad answer leaves it out;
+   * the rest throws. An answer our key does not open is a refusal only on
+   * the uuid (read first, never through here): here it is a value missing.
+   */
   async optional(client, path, options) {
     try {
       return await client.get(path, options);
     } catch (err) {
-      if (isMissing(err) || err?.code === CODES.BAD_ANSWER) {
+      if (isMissing(err) || err?.code === CODES.BAD_ANSWER || err?.code === CODES.KEY) {
         return undefined;
       }
       throw err;
@@ -1008,6 +1012,11 @@ export class KmApp {
     }
     if (!data.key) {
       return [false, T.noIdentity];
+    }
+    const created = this.createdKeys();
+    if (created.length > 0 && !created.includes(data.key)) {
+      // Not ours: the device created in Gladys gets none of its values.
+      return [false, T.foreign];
     }
     const note = this.stopNote(data.key);
     const text = T.connected(session.firmware ?? undefined);

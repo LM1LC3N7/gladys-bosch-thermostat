@@ -28,6 +28,7 @@ npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
 npm run audit                             # npm audit --omit=dev
 npm run cover                             # cover.png (800x534), plain Node
+memcap npm run mutants                    # test/mutants.json, one at a time in a temporary copy
 npx github:GladysAssistant/integration-store .   # store admission checks
 ```
 

@@ -17,7 +17,22 @@ to date at the end of every milestone.
       gateway (paths and shapes of the reference's databases, answers sealed
       with its key) and servers on 127.0.0.1, virtual and real clock (x20),
       Node 22 and 24.
-- [ ] **Review r1** (xhigh).
+- [x] **Review r1 fixes** (2026-11-06, review r1 of bc0bb5b): B1 a refusal of
+      the key only when the first block of the answer does not open as the
+      start of a KM answer ("{" then printable ASCII), and only on the uuid;
+      an answer cut short or with a byte that is no UTF-8 with our key is a
+      bad answer (a value missing, or a failed read), never a refusal; I1 test
+      of the check in the `beforeSend` of a mode (a stop during the lifting
+      of its guard on a slow /data); M1 the RC300/RC200 heating cannot be
+      stopped from Gladys, said in the docs and the manifest, `heating_off`
+      listed; M2 tests for the six guards left (mode no longer listed, quick
+      read after a stop sent without answer, follow-up reads resending a stop,
+      the button's interval, a stop never waiting for /data, `sendWithin`);
+      the mutants versioned in `test/mutants.json`, run by
+      `npm run mutants` (`scripts/mutants.mjs`, outside the image); M3 the
+      status says when another gateway answers; M4 texts (the secrets are
+      never sent; twice at most); M5 noted in "To check".
+- [ ] **Review r2**.
 - [ ] **Milestone 2 — real gateway**: run against a real KM200 (see "To
       check"); turn its answers (anonymized) into fixtures.
 
@@ -33,6 +48,10 @@ to date at the end of every milestone.
   `operationMode` (then they would show as circuits).
 - Whether `currentRoomSetpoint` exists on RC35-type controllers (else the
   setpoint of the mode is read).
+- Answers whose ciphertext is not a multiple of 16 bytes: the reference
+  pads them with zeros before opening them (the `_pad` of its `base.py`);
+  here they are "no ciphertext" (a failure, never a refusal). If a real KM200
+  answers so, the uuid never reads: pad them as the reference does.
 - The latency of one request (one value): a scene of four commands fits up
   to 300 ms per request, a command alone up to 800 ms.
 
@@ -110,8 +129,10 @@ to date at the end of every milestone.
   maxValue, writeable), intersected with ours: room 5-30 °C in half
   degrees, hot water 20 °C to `max_dhw` (65 °C by default, 40-65, never above
   65 °C), checked again in `beforeSend`, with a final 65 °C guard.
-- **Refused key**: a ciphertext of the right shape that our key does not
-  open into JSON; persisted with 8 bits of a salted scrypt print of address,
+- **Refused key**: an answer to the uuid whose first block our key does not
+  open as the start of a KM answer ("{" then printable ASCII; with another
+  key about once in 10^9); a first block that opens but a rest that does not
+  (cut short, no UTF-8) is a bad answer, never a refusal (review r1 B1); persisted with 8 bits of a salted scrypt print of address,
   token and password; lifted by other credentials or a successful button.
   An answer that is no ciphertext (another device) is a failure, never a
   refusal.
@@ -125,15 +146,14 @@ to date at the end of every milestone.
 - **Polling 60 s by default** (30 to 900 s); the period measured from the
   start of the read before.
 - **No energy, schedules, summer/winter, solar, single charge** in v1.
-- **Mutation checks** (milestone 1): 38 mutants of the guards (app, client,
-  store, transport, parsing), one at a time in a copy of the agent, runner
-  `node --test test/*.test.js`: 36 killed (each by a test, no guard
-  removed). Two equivalent survivors kept as they are: the check of a stop of
-  the circuit in the `beforeSend` of a setpoint (every stop bumps the epoch,
-  checked in the same `beforeSend`; a stop held before is refused by the
-  check at the start of the batch), and `startedAt > stopSentAt` in
-  `observe()` (the write counter set in the same `beforeSend` drops any
-  read begun before the stop).
+- **Mutation checks**: the list is `test/mutants.json` (47 mutants of the
+  guards of the app, the client, the cipher, the transport, /data and the
+  parsing), run with `memcap npm run mutants` (one at a time in a temporary
+  copy, runner `node --test test/*.test.js`, process group killed at the
+  deadline). After review r1: all 47 killed by a test, none hangs, no guard
+  removed (the two survivors of milestone 1, the stop check in the
+  `beforeSend` of a setpoint and `startedAt > stopSentAt`, are now killed
+  too).
 - **Manifest**: `categories: ["climate"]`, `transports: ["local"]`; no
   `keywords` nor `countries` (left out on purpose; would be DE, NL, SE and
   the EU countries where Buderus sells).

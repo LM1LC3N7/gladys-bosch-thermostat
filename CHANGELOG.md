@@ -24,5 +24,7 @@ the notes of the version's GitHub Release.
   missing configuration, a mode the circuit does not list or another gateway
   at the address; kept in `/data` and sent again by the reads until the
   gateway answers it.
+- Only an answer whose first block does not open with the key counts as
+  refused credentials: an answer cut short is a failed read (review r1).
 - Refused credentials stop the reads (no automatic retry); HTTP 429/5xx
   pause them; "Test the connection" button. English and French.

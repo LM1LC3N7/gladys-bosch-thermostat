@@ -629,3 +629,85 @@ test('a command waiting behind a batch when a stop comes is never sent after it'
   const at = t.dev.requests.findIndex(isStop);
   assert.ok(!t.dev.requests.slice(at + 1).some((r) => r.method === 'PUT'), 'nothing after it');
 });
+
+test('a mode lifting the guard of a stop (slow /data), then "Off": the mode never leaves after the stop', async () => {
+  const base = memoryStore();
+  let slow = false;
+  const store = {
+    ...base,
+    load: () => base.load(),
+    save: async (data) => {
+      if (slow) {
+        // A slow volume, within the 1.5 s bound.
+        await new Promise((resolve) => clock.timers.setTimeout(resolve, 1000));
+      }
+      return base.save(data);
+    },
+  };
+  const { testClock } = await import('./kit/index.mjs');
+  const clock = testClock({ start: Date.UTC(2026, 10, 6, 10, 0, 0) });
+  const t = await setup({ store, clock, config: ALLOW });
+  await t.connect();
+  await t.create();
+  assert.deepEqual(await off(t), { success: true });
+  slow = true;
+  const mode = t.command('dhw1-mode', 'high');
+  await t.wait(400);
+  const stop = off(t);
+  const [m, s] = (await t.during(Promise.all([mode, stop]), 8 * SECOND)).value;
+  assert.equal(s.success, true);
+  assert.equal(m.success, false);
+  assert.match(m.error, /Un arrêt a été envoyé depuis/);
+  const values = t.dev.puts().map((r) => r.value);
+  assert.ok(!values.includes('high'), `puts: ${values.join(', ')}`);
+  assert.equal(t.dev.paths[DHW_MODE].value, 'Off');
+});
+
+test('a mode the created select lists but the gateway no longer does: refused, nothing sent', async () => {
+  const t = await setup({ config: ALLOW });
+  await t.connect();
+  await t.create();
+  t.dev.paths[DHW_MODE].allowedValues = ['Off', 'high'];
+  const ack = await t.command('dhw1-mode', 'low');
+  assert.match(ack.error, /n’est pas un de ceux que liste ce circuit/);
+  assert.equal(t.dev.puts().length, 0);
+});
+
+test('a stop sent without an answer: a quick read checks it (follow-up), and sends it again', async () => {
+  const t = await setup();
+  await t.connect();
+  await t.create();
+  t.dev.route = (path, method) => (method === 'PUT' ? 'silent' : undefined);
+  await off(t);
+  t.dev.route = undefined;
+  const reads = t.dev.count('/gateway/uuid');
+  await t.wait(10 * SECOND);
+  assert.ok(t.dev.count('/gateway/uuid') > reads, 'a follow-up read within 10 s');
+  assert.equal(stops(t), 2, 'sent again by it');
+  assert.equal(t.dev.paths[DHW_MODE].value, 'Off');
+});
+
+test('a stop answered 503: the follow-up read sends it again first, before the interval', async () => {
+  const store = memoryStore();
+  const t = await setup({ store });
+  await t.connect();
+  await t.create();
+  t.dev.route = (path, method) => (method === 'PUT' ? { status: 503, body: '' } : undefined);
+  await off(t);
+  t.dev.route = undefined;
+  await t.wait(25 * SECOND);
+  assert.equal(stops(t), 2, 'sent again by a follow-up read');
+  assert.equal(t.dev.paths[DHW_MODE].value, 'Off');
+});
+
+test('/data stuck: a stop is acked at once, never waiting for the save', async () => {
+  const store = memoryStore();
+  const t = await setup({ store });
+  await t.connect();
+  await t.create();
+  store.frozen = true;
+  const at = t.clock.monotonic();
+  assert.deepEqual(await off(t), { success: true });
+  assert.ok(t.clock.monotonic() - at < 200, `${Math.round(t.clock.monotonic() - at)} ms`);
+  store.thaw();
+});

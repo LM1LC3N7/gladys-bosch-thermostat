@@ -1,6 +1,6 @@
 {
   "name": "gladys-bosch-thermostat",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Gladys Assistant external integration for Buderus (Bosch group) boilers and heat pumps through their local KM50/KM100/KM200 gateway: temperatures, heating and hot water circuits, optional bounded commands. Unofficial, not affiliated with Bosch or Buderus.",
   "type": "module",

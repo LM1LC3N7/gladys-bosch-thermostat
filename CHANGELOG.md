@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-06
+
 ### Added
 
 - First version: Buderus (Bosch group) boilers and heat pumps through their
@@ -28,3 +30,6 @@ the notes of the version's GitHub Release.
   refused credentials: an answer cut short is a failed read (review r1).
 - Refused credentials stop the reads (no automatic retry); HTTP 429/5xx
   pause them; "Test the connection" button. English and French.
+
+[Unreleased]: https://github.com/LM1LC3N7/gladys-bosch-thermostat/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LM1LC3N7/gladys-bosch-thermostat/releases/tag/v0.1.1
